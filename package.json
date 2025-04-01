@@ -1,0 +1,55 @@
+{
+  "name": "discord-patreon",
+  "version": "0.0.6",
+  "description": "Monitor Patreon membership events and integrate with Discord, including Discord IDs and status tracking",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "type": "commonjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node index.ts",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "patreon",
+    "discord",
+    "membership",
+    "events",
+    "webhook",
+    "integration",
+    "oauth",
+    "roles",
+    "bot"
+  ],
+  "author": "SmSm",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/events": "^3.0.3",
+    "@types/node": "^22.13.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "axios": "^1.8.4",
+    "events": "^3.3.0"
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/username/discord-patreon"
+  },
+  "bugs": {
+    "url": "https://github.com/username/discord-patreon/issues"
+  }
+}
