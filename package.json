@@ -1,5 +1,5 @@
 {
-  "name": "discord-patreon",patreon",
+  "name": "@devsmsm/discord-patreon",
   "version": "0.0.7",
   "description": "Monitor Patreon membership events and integrate with Discord, including Discord IDs and status tracking",
   "main": "dist/index.js",
