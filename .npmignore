@@ -11,6 +11,7 @@ tsconfig.json
 
 # tests
 test/
+/test
 
 # misc
 node_modules/

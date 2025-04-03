@@ -1,6 +1,6 @@
 {
-  "name": "discord-patreon",
-  "version": "0.0.6",
+  "name": "discord-patreon",patreon",
+  "version": "0.0.7",
   "description": "Monitor Patreon membership events and integrate with Discord, including Discord IDs and status tracking",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -43,11 +43,15 @@
     "events": "^3.3.0"
   },
   "files": [
-    "dist/**/*"
+    "dist/**/*",
+    "src"
   ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/DEVSMSM/discord-patreon"
+    "url": "git+https://github.com/DEVSMSM/discord-patreon.git"
   },
   "bugs": {
     "url": "https://github.com/DEVSMSM/discord-patreon/issues"
