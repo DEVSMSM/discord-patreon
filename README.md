@@ -87,7 +87,7 @@ Each patron object contains:
 ```typescript
 {
   id: string;                 // Patreon member ID
-  status: string;             // Status: active, declined, canceled
+  status: string;             // Status: active_patron, declined_patron, former_patron
   fullName?: string;          // Patron's full name (if available)
   email?: string;             // Patron's email (if available)
   patronStatus?: string;      // Detailed patron status
@@ -314,3 +314,7 @@ ISC
 ## Support
 
 For questions or support, please contact: `devszero` on Discord.
+
+## Stability Notice
+
+**IMPORTANT**: This package is currently in early development. You may encounter bugs or changes to the API in future versions. Error handling for edge cases is still being refined, and some features might not work as expected with all Patreon account configurations. Please report any issues on the GitHub repository.

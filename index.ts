@@ -1,5 +1,5 @@
 import { EventEmitter } from "events";
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -29,7 +29,7 @@ interface CacheData {
 // Membership Interface
 interface MembershipData {
     id: string;
-    status: string; // active, declined, canceled
+    status: string; // active_patron, declined_patron, former_patron
     fullName?: string;
     email?: string;
     patronStatus?: string;
@@ -51,6 +51,16 @@ interface PatreonEventMap {
     expired: (data: MembershipData) => void; // New event for expired subscriptions
     error: (error: Error) => void;
     ready: () => void; // New event for initialization completion
+}
+
+// Define a type for the Patreon API response structure
+interface PatreonApiResponse {
+  data: any[];
+  included?: any[];
+  links?: {
+    next?: string | null;
+  };
+  meta?: any;
 }
 
 /**
@@ -218,36 +228,53 @@ class PatreonEvents extends EventEmitter {
                 'next_charge_date'  // Add field for expiration date
             ];
             
-            const response = await axios.get(`https://www.patreon.com/api/oauth2/v2/campaigns/${this.campaignId}/members`, {
-                headers: {
-                    'Authorization': `Bearer ${this.accessToken}`,
-                    'Accept': 'application/json'
-                },
-                params: {
-                    // Always include user to get Discord ID and other social connections
-                    'include': 'user,currently_entitled_tiers',
-                    // Only use verified fields for member
-                    'fields[member]': defaultMemberFields.join(','),
-                    // Explicitly request social connections to get Discord ID
-                    'fields[user]': 'social_connections',
-                    // Get tier info
-                    'fields[tier]': 'title,amount_cents'
+            // Initialize array to hold all members and included resources
+            let allMembers: any[] = [];
+            let allIncluded: any[] = [];
+            let nextUrl: string | null = `https://www.patreon.com/api/oauth2/v2/campaigns/${this.campaignId}/members`;
+            
+            // Loop through all pages
+            while (nextUrl) {
+                const apiResponse: AxiosResponse<PatreonApiResponse> = await axios.get(nextUrl, {
+                    headers: {
+                        'Authorization': `Bearer ${this.accessToken}`,
+                        'Accept': 'application/json'
+                    },
+                    params: nextUrl.includes('?') ? undefined : {
+                        // Only send params on first request, as pagination URLs include params
+                        'include': 'user,currently_entitled_tiers',
+                        'fields[member]': defaultMemberFields.join(','),
+                        'fields[user]': 'social_connections',
+                        'fields[tier]': 'title,amount_cents',
+                        'page[count]': 100 // Request maximum number of records per page
+                    }
+                });
+                   
+                // Extract members from the response
+                if (!apiResponse?.data?.data || !Array.isArray(apiResponse.data.data)) {
+                    console.warn("Unexpected response structure:", apiResponse.data);
+                    return [];
                 }
-            });
-               
-            // Extract members from the response
-            if (!response?.data?.data || !Array.isArray(response.data.data)) {
-                console.warn("Unexpected response structure:", response.data);
-                return [];
+                
+                // Add members from this page to our collection
+                allMembers = allMembers.concat(apiResponse.data.data);
+                
+                // Add included resources (users, tiers) to our collection
+                if (apiResponse.data.included && Array.isArray(apiResponse.data.included)) {
+                    allIncluded = allIncluded.concat(apiResponse.data.included);
+                }
+                
+                // Check for pagination links
+                nextUrl = apiResponse.data.links?.next || null;
             }
             
-            return response.data.data.map((member: any) => {
+            return allMembers.map((member: any) => {
                 // Find the user data from included resources
-                const userData = response.data.included?.find((inc: any) => 
+                const userData = allIncluded.find((inc: any) => 
                     inc.type === 'user' && inc.id === member.relationships?.user?.data?.id);
                 
                 // Find tier data if available
-                const tierData = response.data.included?.find((inc: any) => 
+                const tierData = allIncluded.find((inc: any) => 
                     inc.type === 'tier' && member.relationships?.currently_entitled_tiers?.data?.[0]?.id === inc.id);
                 
                 // Extract Discord ID (prioritized field)
@@ -439,10 +466,10 @@ class PatreonEvents extends EventEmitter {
                     }
                 } else if (previousStatus !== status) {
                     // Status changes can happen multiple times, so always emit them
-                    if (status === "canceled") this.emitAndTrack("canceled", member);
-                    if (status === "declined") this.emitAndTrack("declined", member);
-                    if (status === "active" && 
-                        (previousStatus === "canceled" || previousStatus === "declined")) {
+                    if (status === "former_patron") this.emitAndTrack("canceled", member);
+                    if (status === "declined_patron") this.emitAndTrack("declined", member);
+                    if (status === "active_patron" && 
+                        (previousStatus === "former_patron" || previousStatus === "declined_patron")) {
                         this.emitAndTrack("reactivated", member);
                     }
                     if (status === "none") {
